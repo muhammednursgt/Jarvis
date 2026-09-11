@@ -207,7 +207,7 @@
 
     <!-- SOL PANEL -->
     <div class="panel">
-        <div class="panel-header">📱 BAĞLI CİHAZLAR <button class="btn-action" onclick="syncDevices()">YENİLE</button></div>
+        <div class="panel-header">📱 BAĞLI CİHAZLAR</div>
         <div class="status-row"><span>iPhone 15 Pro Max</span><div class="bar-container"><div class="bar-fill" id="dev1" style="width: 87%;"></div></div><span id="dev1Text">%87</span></div>
         <div class="status-row"><span>MacBook Air</span><div class="bar-container"><div class="bar-fill" style="width: 76%;"></div></div><span>%76</span></div>
         <div class="status-row"><span>SAK-PC</span><div class="bar-container"><div class="bar-fill" style="width: 62%;"></div></div><span>%62</span></div>
@@ -266,7 +266,9 @@
         <div class="status-row"><span>Pil Seviyesi:</span><span id="liveBatLevel">%--</span></div>
         <div class="status-row"><span>Şarj Durumu:</span><span id="liveBatState">--</span></div>
 
-        <button class="btn-action" onclick="setApiKey()" style="margin-top: auto; padding: 6px;">🔑 API Key Değiştir</button>
+        <div class="status-row" style="justify-content: center; background: rgba(0,243,255,0.05); margin-top: auto;">
+            <span style="color: var(--cyan); font-weight: bold;">SİSTEM HAZIR</span>
+        </div>
     </div>
 
     <!-- FOOTER VE POPUP -->
@@ -284,22 +286,8 @@
     </div>
 
     <script>
-        function getApiKey() {
-            let key = localStorage.getItem("GEMINI_KEY");
-            if (!key) {
-                key = prompt("Lütfen Google AI Studio'dan aldığınız Gemini API Key'i girin:");
-                if (key) localStorage.setItem("GEMINI_KEY", key.trim());
-            }
-            return key;
-        }
-
-        function setApiKey() {
-            const key = prompt("Yeni Gemini API Key:");
-            if (key) { 
-                localStorage.setItem("GEMINI_KEY", key.trim()); 
-                alert("API Key başarıyla kaydedildi!"); 
-            }
-        }
+        // API ANAHTARI DOĞRUDAN KODA GÖMÜLDÜ
+        const API_KEY = "AIzaSyDZE1z25PE4IRY7r1dClYU_7BsgtAD14uo";
 
         function openBrothersModal() { document.getElementById('brothersModal').style.display = 'flex'; }
         function closeBrothersModal() { document.getElementById('brothersModal').style.display = 'none'; }
@@ -405,11 +393,8 @@
             }
         }
 
-        // AI SORU CEVAPLAMA SİSTEMİ (GÜNCELLENMİŞ & HATA DETAYLI)
+        // AI SORU CEVAPLAMA SİSTEMİ
         async function askJarvis(customText = null) {
-            const apiKey = getApiKey();
-            if (!apiKey) return alert("Lütfen geçerli bir API Key girin!");
-
             const input = document.getElementById('userInput');
             const promptText = customText || input.value.trim();
             if (!promptText) return;
@@ -419,8 +404,7 @@
             addMsg("İşleniyor...", 'jarvis');
 
             try {
-                // Modeli 'gemini-1.5-flash' olarak güncelledik
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
