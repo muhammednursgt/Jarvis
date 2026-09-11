@@ -284,11 +284,10 @@
     </div>
 
     <script>
-        // API Key Yönetimi
         function getApiKey() {
             let key = localStorage.getItem("GEMINI_KEY");
             if (!key) {
-                key = prompt("Lütfen Gemini API Key anahtarınızı girin:");
+                key = prompt("Lütfen Google AI Studio'dan aldığınız Gemini API Key'i girin:");
                 if (key) localStorage.setItem("GEMINI_KEY", key.trim());
             }
             return key;
@@ -296,7 +295,10 @@
 
         function setApiKey() {
             const key = prompt("Yeni Gemini API Key:");
-            if (key) { localStorage.setItem("GEMINI_KEY", key.trim()); alert("API Key güncellendi!"); }
+            if (key) { 
+                localStorage.setItem("GEMINI_KEY", key.trim()); 
+                alert("API Key başarıyla kaydedildi!"); 
+            }
         }
 
         function openBrothersModal() { document.getElementById('brothersModal').style.display = 'flex'; }
@@ -403,10 +405,10 @@
             }
         }
 
-        // AI SORU CEVAPLAMA SİSTEMİ
+        // AI SORU CEVAPLAMA SİSTEMİ (GÜNCELLENMİŞ & HATA DETAYLI)
         async function askJarvis(customText = null) {
             const apiKey = getApiKey();
-            if (!apiKey) return;
+            if (!apiKey) return alert("Lütfen geçerli bir API Key girin!");
 
             const input = document.getElementById('userInput');
             const promptText = customText || input.value.trim();
@@ -417,7 +419,8 @@
             addMsg("İşleniyor...", 'jarvis');
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                // Modeli 'gemini-1.5-flash' olarak güncelledik
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -429,7 +432,13 @@
                 });
 
                 const data = await res.json();
-                const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Yanıt alınamadı.";
+
+                if (!res.ok) {
+                    const errorMsg = data.error?.message || "Bilinmeyen API Hatası";
+                    throw new Error(`API Hatası (${res.status}): ${errorMsg}`);
+                }
+
+                const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Yanıt içeriği boş döndü.";
                 
                 const chat = document.getElementById('chatBox');
                 chat.lastChild.innerText = answer;
@@ -440,7 +449,9 @@
                 });
 
             } catch (err) {
-                document.getElementById('chatBox').lastChild.innerText = "Hata: " + err.message;
+                const chat = document.getElementById('chatBox');
+                chat.lastChild.innerText = "Sistem Hatası: " + err.message;
+                chat.scrollTop = chat.scrollHeight;
             }
         }
 
