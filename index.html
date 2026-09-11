@@ -239,7 +239,7 @@
         </div>
 
         <div id="chatBox">
-            <div class="msg jarvis">Sistem aktif Efendim. Mikrofon butonuna basarak sürekli sesli dinleme modunu başlatabilirsiniz.</div>
+            <div class="msg jarvis">Sistem aktif Efendim. Dinleme butonuna basarak sesli komut sistemini başlatabilirsiniz.</div>
         </div>
 
         <div class="controls">
@@ -284,12 +284,27 @@
     </div>
 
     <script>
+        // API Key Yönetimi
+        function getApiKey() {
+            let key = localStorage.getItem("GEMINI_KEY");
+            if (!key) {
+                key = prompt("Lütfen Gemini API Key anahtarınızı girin:");
+                if (key) localStorage.setItem("GEMINI_KEY", key.trim());
+            }
+            return key;
+        }
+
+        function setApiKey() {
+            const key = prompt("Yeni Gemini API Key:");
+            if (key) { localStorage.setItem("GEMINI_KEY", key.trim()); alert("API Key güncellendi!"); }
+        }
+
         function openBrothersModal() { document.getElementById('brothersModal').style.display = 'flex'; }
         function closeBrothersModal() { document.getElementById('brothersModal').style.display = 'none'; }
 
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('tr-TR'); }, 1000);
 
-        // THREE.JS 3D DÜNYA
+        // THREE.JS 3D DÜNYA KÜRESİ
         const canvas = document.getElementById('globeCanvas');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
@@ -352,7 +367,7 @@
             synth.speak(utter);
         }
 
-        // PİL VE GPS
+        // CANLI PİL VE GPS
         if ('getBattery' in navigator) {
             navigator.getBattery().then(bat => {
                 function updateBat() {
@@ -388,24 +403,10 @@
             }
         }
 
-        // AI CEVAPLAMA
-        function getApiKey() {
-            let key = localStorage.getItem("GEMINI_KEY");
-            if (!key) {
-                key = prompt("Gemini API Key girin:");
-                if (key) localStorage.setItem("GEMINI_KEY", key.trim());
-            }
-            return key;
-        }
-
-        function setApiKey() {
-            const key = prompt("Yeni API Key:");
-            if (key) { localStorage.setItem("GEMINI_KEY", key.trim()); alert("Kaydedildi!"); }
-        }
-
+        // AI SORU CEVAPLAMA SİSTEMİ
         async function askJarvis(customText = null) {
             const apiKey = getApiKey();
-            if (!apiKey) return alert("API Key gerekli!");
+            if (!apiKey) return;
 
             const input = document.getElementById('userInput');
             const promptText = customText || input.value.trim();
@@ -452,7 +453,7 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // SÜREKLİ SES DİNLEME VE SESLE KONTROL SİSTEMİ
+        // SÜREKLİ SESLİ DİNLENME SİSTEMİ
         let recognition;
         let isListening = false;
 
@@ -505,4 +506,3 @@
     </script>
 </body>
 </html>
-
