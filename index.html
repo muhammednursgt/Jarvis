@@ -3,501 +3,554 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS V2 - FULL VOICE HUD</title>
+    <title>JARVIS V3 - ADVANCED HUD</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --cyan: #00f3ff;
-            --blue: #0066ff;
-            --bg: #010814;
-            --panel-bg: rgba(2, 14, 33, 0.9);
-            --border: #00f3ff;
-            --text: #00f3ff;
+            --cyan: #00ffcc;
+            --dark-cyan: #008866;
+            --bg: #030712;
+            --panel-bg: rgba(3, 11, 24, 0.95);
+            --border: #00ffcc55;
+            --border-glow: #00ffcc;
+            --text: #e2e8f0;
+            --accent: #38bdf8;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'Consolas', 'Segoe UI', monospace;
-            padding: 8px;
-            display: grid;
-            grid-template-columns: 290px 1fr 290px;
-            grid-template-rows: 1fr auto;
-            gap: 10px;
+            font-family: 'Share Tech Mono', 'Courier New', monospace, sans-serif;
             height: 100vh;
+            width: 100vw;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 45px 1fr 35px;
+            gap: 6px;
+            padding: 6px;
             overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                overflow-y: auto;
+                height: auto;
+            }
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            box-shadow: 0 0 10px rgba(0,255,204,0.2);
+        }
+
+        header h1 {
+            font-size: 16px;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px var(--cyan);
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--accent);
         }
 
         .panel {
             background: var(--panel-bg);
             border: 1px solid var(--border);
-            border-radius: 4px;
+            border-radius: 3px;
             padding: 8px;
-            box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.15), 0 0 15px rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
             gap: 6px;
-            font-size: 11px;
-            overflow-y: auto;
+            box-shadow: inset 0 0 10px rgba(0,255,204,0.05);
+            overflow: hidden;
         }
 
-        .panel-header {
-            background: rgba(0, 243, 255, 0.1);
-            border: 1px solid var(--cyan);
-            padding: 4px 8px;
+        .panel-title {
+            font-size: 11px;
             font-weight: bold;
-            font-size: 11px;
+            color: var(--cyan);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             letter-spacing: 1px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
-        .status-row {
+        .row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
             padding: 4px 6px;
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            border-left: 3px solid var(--cyan);
+            font-size: 11px;
+            border-left: 2px solid var(--cyan);
         }
 
-        .center-screen {
+        /* ORTA EKRAN ALANI */
+        .center-stage {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
+            gap: 6px;
+            height: 100%;
+        }
+
+        .globe-wrapper {
             position: relative;
+            width: 100%;
+            height: 180px;
+            background: radial-gradient(circle, rgba(0,255,204,0.08) 0%, rgba(0,0,0,0.8) 80%);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #globeCanvas {
             width: 100% !important;
-            height: 240px !important;
-            outline: none;
+            height: 100% !important;
         }
 
-        #chatBox {
-            width: 100%;
-            height: 150px;
+        .chat-container {
+            flex: 1;
             background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--cyan);
-            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 6px;
             overflow-y: auto;
-            border-radius: 4px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            font-size: 12px;
+            gap: 4px;
+            min-height: 120px;
         }
 
-        .msg { padding: 6px 10px; border-radius: 4px; line-height: 1.3; }
-        .user { background: rgba(255,255,255,0.15); color: #fff; align-self: flex-end; max-width: 80%; }
-        .jarvis { background: rgba(0,243,255,0.15); border-left: 3px solid var(--cyan); align-self: flex-start; max-width: 85%; }
+        .msg {
+            padding: 6px 8px;
+            font-size: 11px;
+            line-height: 1.4;
+            border-radius: 2px;
+            word-break: break-word;
+        }
 
-        .controls {
-            width: 100%;
+        .msg.user {
+            background: rgba(56, 189, 248, 0.15);
+            color: #fff;
+            align-self: flex-end;
+            border-right: 2px solid var(--accent);
+            max-width: 85%;
+        }
+
+        .msg.jarvis {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--cyan);
+            align-self: flex-start;
+            border-left: 2px solid var(--cyan);
+            max-width: 85%;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+
+        .q-btn {
+            background: rgba(0,255,204,0.08);
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            font-size: 10px;
+            padding: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .q-btn:hover {
+            background: var(--cyan);
+            color: #000;
+        }
+
+        .input-bar {
             display: flex;
-            gap: 6px;
+            gap: 4px;
         }
 
         input[type="text"], select {
-            background: #000;
+            background: #010409;
             border: 1px solid var(--cyan);
             color: #fff;
-            padding: 6px 8px;
+            padding: 6px;
+            font-family: inherit;
+            font-size: 11px;
             outline: none;
-            font-family: monospace;
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         input[type="text"] { flex: 1; }
 
-        button {
+        button.action-btn {
             background: var(--cyan);
             border: none;
             color: #000;
             font-weight: bold;
             padding: 6px 12px;
             cursor: pointer;
-            border-radius: 3px;
+            font-size: 11px;
+            transition: 0.2s;
         }
 
-        .mic-active {
+        button.action-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 8px #fff;
+        }
+
+        .mic-on {
             background: #ff0055 !important;
             color: #fff !important;
-            box-shadow: 0 0 10px #ff0055;
             animation: pulse 1s infinite alternate;
         }
 
         @keyframes pulse {
-            from { opacity: 0.7; }
+            from { opacity: 0.6; }
             to { opacity: 1; }
         }
 
-        .btn-action {
-            background: transparent;
-            border: 1px solid var(--cyan);
-            color: var(--cyan);
-            padding: 2px 6px;
-            font-size: 10px;
-            cursor: pointer;
-        }
-
-        .bar-container {
-            width: 70px;
-            height: 6px;
+        .terminal-log {
             background: #000;
-            border: 1px solid var(--cyan);
-            border-radius: 2px;
-            overflow: hidden;
+            border: 1px solid rgba(0,255,204,0.3);
+            font-size: 9px;
+            color: #00ff66;
+            padding: 4px;
+            height: 65px;
+            overflow-y: auto;
+            font-family: monospace;
         }
-
-        .bar-fill { height: 100%; background: var(--cyan); }
 
         footer {
             grid-column: 1 / -1;
-            text-align: center;
-            padding: 4px;
-            background: rgba(0, 0, 0, 0.9);
+            background: var(--panel-bg);
             border: 1px solid var(--border);
-            font-size: 11px;
-            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 10px;
         }
 
-        .brothers-link { color: var(--cyan); text-decoration: underline; cursor: pointer; font-weight: bold; }
+        .brothers-link { color: var(--cyan); text-decoration: underline; cursor: pointer; }
 
-        .modal-overlay {
+        .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.85);
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
             z-index: 999;
             justify-content: center;
             align-items: center;
         }
-
-        .modal-content {
+        .modal-box {
             background: var(--panel-bg);
-            border: 2px solid var(--cyan);
-            border-radius: 6px;
+            border: 1px solid var(--cyan);
             padding: 15px;
-            width: 300px;
-            text-align: center;
+            width: 280px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
+            text-align: center;
         }
-
         .modal-btn {
-            display: block;
             background: transparent;
             border: 1px solid var(--cyan);
             color: var(--cyan);
-            padding: 8px;
-            border-radius: 4px;
+            padding: 6px;
             text-decoration: none;
-            font-weight: bold;
+            font-size: 11px;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-    <!-- SOL PANEL -->
+    <!-- ÜST BİLGİ ÇUBUĞU -->
+    <header>
+        <h1>JARVIS v3.0 // HUD INTERFACE</h1>
+        <div class="header-stats">
+            <span id="clock">00:00:00</span>
+            <span style="color:#00ff66;">● SECURE_LINK</span>
+        </div>
+    </header>
+
+    <!-- SOL PANEL: DONANIM VE ÇEVRE -->
     <div class="panel">
-        <div class="panel-header">📱 BAĞLI CİHAZLAR</div>
-        <div class="status-row"><span>iPhone 15 Pro Max</span><div class="bar-container"><div class="bar-fill" id="dev1" style="width: 87%;"></div></div><span id="dev1Text">%87</span></div>
-        <div class="status-row"><span>MacBook Air</span><div class="bar-container"><div class="bar-fill" style="width: 76%;"></div></div><span>%76</span></div>
-        <div class="status-row"><span>SAK-PC</span><div class="bar-container"><div class="bar-fill" style="width: 62%;"></div></div><span>%62</span></div>
-        <div class="status-row"><span>AirPods Pro</span><div class="bar-container"><div class="bar-fill" style="width: 94%;"></div></div><span>%94</span></div>
-        <div class="status-row"><span>Akıllı Saat</span><div class="bar-container"><div class="bar-fill" style="width: 68%;"></div></div><span>%68</span></div>
+        <div class="panel-title">SYSTEM STATUS</div>
+        <div class="row"><span>CPU LOAD</span><span id="cpuLoad">18%</span></div>
+        <div class="row"><span>RAM USAGE</span><span id="ramUsage">4.2 GB / 16 GB</span></div>
+        <div class="row"><span>CORE TEMP</span><span>38.4 °C</span></div>
+        <div class="row"><span>BATTERY</span><span id="batStatus">--</span></div>
 
-        <div class="panel-header">🌐 KONUM BİLGİSİ <button class="btn-action" onclick="getGPS()">GPS AL</button></div>
-        <div class="status-row"><span>Konum:</span><span id="locName">Bekleniyor...</span></div>
-        <div class="status-row"><span>Koordinat:</span><span id="locCoords">0.0000 N, 0.0000 E</span></div>
+        <div class="panel-title" style="margin-top: 4px;">GEO & WEATHER <button class="q-btn" onclick="getGPS()" style="padding:1px 4px;">GPS</button></div>
+        <div class="row"><span>LOCATION</span><span id="locName">Taraniyor...</span></div>
+        <div class="row"><span>TEMP</span><span id="weatherTemp">-- °C</span></div>
+        <div class="row"><span>WIND</span><span id="weatherWind">-- km/h</span></div>
 
-        <div class="panel-header">☀️ HAVA DURUMU</div>
-        <div class="status-row"><span>Sıcaklık:</span><span id="weatherTemp">-- °C</span></div>
-        <div class="status-row"><span>Rüzgar:</span><span id="weatherWind">-- km/h</span></div>
-
-        <div class="panel-header">📶 İNTERNET & BAĞLANTI</div>
-        <div class="status-row"><span>Wi-Fi:</span><span style="color:#00ff66;">Bağlı</span></div>
-        <div class="status-row"><span>Bluetooth:</span><span style="color:#00ff66;">Açık</span></div>
+        <div class="panel-title" style="margin-top: 4px;">LINKED DEVICES</div>
+        <div class="row"><span>iPhone 15 PM</span><span style="color:#00ff66;">Online (%87)</span></div>
+        <div class="row"><span>MacBook Air</span><span style="color:#00ff66;">Online (%76)</span></div>
+        <div class="row"><span>SAK-PC Node</span><span style="color:#00ff66;">Active</span></div>
     </div>
 
-    <!-- ORTA PANEL -->
-    <div class="center-screen panel">
-        <div class="panel-header" style="width: 100%;">
-            <span>JARVIS V2 - FULL VOICE CORE</span>
-            <span id="clock">13:42:00</span>
-        </div>
-
-        <div id="globeContainer" style="width: 100%; display: flex; justify-content: center;">
+    <!-- ORTA PANEL: 3D KÜRE VE SOHBET -->
+    <div class="panel center-stage">
+        <div class="panel-title">QUANTUM GLOBE DISPLAY</div>
+        <div class="globe-wrapper">
             <canvas id="globeCanvas"></canvas>
         </div>
 
-        <div id="chatBox">
-            <div class="msg jarvis">Sistem aktif Efendim. Dinleme butonuna basarak sesli komut sistemini başlatabilirsiniz.</div>
+        <div class="chat-container" id="chatBox">
+            <div class="msg jarvis">Sistem tamamen optimize edildi Efendim. Komutlarınızı bekliyorum.</div>
         </div>
 
-        <div class="controls">
-            <input type="text" id="userInput" placeholder="Mesaj yazın veya konuşun..." onkeydown="if(event.key==='Enter') askJarvis()">
-            <button id="micBtn" onclick="toggleSpeech()" title="Sürekli Sesli Dinleme">🎙️ SESLİ KONTROL</button>
-            <button onclick="askJarvis()">GÖNDER</button>
+        <div class="quick-actions">
+            <button class="q-btn" onclick="sendQuick('Sistem durum raporu ver')">Rapor Ver</button>
+            <button class="q-btn" onclick="sendQuick('Hava durumunu analiz et')">Hava Durumu</button>
+            <button class="q-btn" onclick="sendQuick('Bellek optimizasyonu başlat')">Optimizasyon</button>
+            <button class="q-btn" onclick="sendQuick('Protokol Alpha aktif')">Protokol Alpha</button>
+        </div>
+
+        <div class="input-bar">
+            <input type="text" id="userInput" placeholder="Komut girin..." onkeydown="if(event.key==='Enter') askJarvis()">
+            <button class="action-btn" id="micBtn" onclick="toggleSpeech()">🎙️ SES</button>
+            <button class="action-btn" onclick="askJarvis()">GÖNDER</button>
         </div>
     </div>
 
-    <!-- SAĞ PANEL -->
+    <!-- SAĞ PANEL: TERMİNAL LOG VE SES AYARLARI -->
     <div class="panel">
-        <div class="panel-header">🗣️ SES & DİL SEÇİMİ</div>
-        <div class="status-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-            <span>Yapay Zeka Ses Tonu:</span>
-            <select id="voiceSelect" style="width: 100%;"></select>
+        <div class="panel-title">VOICE CONFIG</div>
+        <div class="row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+            <span style="font-size:10px; color:var(--cyan);">SYNTHESIS VOICE:</span>
+            <select id="voiceSelect" style="width:100%;"></select>
         </div>
 
-        <div class="panel-header">⚙️ SİSTEM DURUMU</div>
-        <div class="status-row"><span>CPU:</span><span>34%</span></div>
-        <div class="status-row"><span>RAM:</span><span>62%</span></div>
-        <div class="status-row"><span>SSD:</span><span>71%</span></div>
+        <div class="panel-title" style="margin-top: 4px;">LIVE TERMINAL LOG</div>
+        <div class="terminal-log" id="terminalLog">
+            [SYS] Initializing core modules...<br>
+            [SEC] Neural link established.<br>
+            [API] Gemini v1.5 bridge ready.<br>
+        </div>
 
-        <div class="panel-header">🔋 CANLI PİL BİLGİSİ</div>
-        <div class="status-row"><span>Pil Seviyesi:</span><span id="liveBatLevel">%--</span></div>
-        <div class="status-row"><span>Şarj Durumu:</span><span id="liveBatState">--</span></div>
-
-        <div class="status-row" style="justify-content: center; background: rgba(0,243,255,0.05); margin-top: auto;">
-            <span style="color: var(--cyan); font-weight: bold;">SİSTEM HAZIR</span>
+        <div class="panel-title" style="margin-top: auto;">SECURITY PROTOCOL</div>
+        <div class="row" style="justify-content:center; color:#00ff66; font-weight:bold;">
+            ENCRYPTION: ACTIVE (AES-256)
         </div>
     </div>
 
-    <!-- FOOTER VE POPUP -->
+    <!-- FOOTER -->
     <footer>
-        Bu site <span class="brothers-link" onclick="openBrothersModal()">kardeşler</span> tarafından hazırlandı.
+        <span>JARVIS V3 CORE // BUILD 2026.4</span>
+        <span>Bu site <span class="brothers-link" onclick="openModal()">kardeşler</span> tarafından geliştirildi.</span>
     </footer>
 
-    <div class="modal-overlay" id="brothersModal">
-        <div class="modal-content">
-            <div class="panel-header" style="justify-content: center;">GELİŞTİRİCİ KARDEŞLER</div>
+    <!-- MODAL -->
+    <div class="modal" id="devModal">
+        <div class="modal-box">
+            <div class="panel-title" style="justify-content:center;">DEVELOPERS</div>
             <a href="https://www.instagram.com/muhammed_nur_sgt?stkn=cW16ejE1bzd4dW1k" target="_blank" class="modal-btn">📸 Muhammed Nur</a>
             <a href="https://www.instagram.com/muhammed._.alis06?stkn=dGNjcWd5Mmw5eTg0&utm_source=qr" target="_blank" class="modal-btn">📸 Muhammed Ali</a>
-            <button class="btn-action" onclick="closeBrothersModal()">KAPAT</button>
+            <button class="action-btn" onclick="closeModal()" style="width:100%; margin-top:5px;">KAPAT</button>
         </div>
     </div>
 
     <script>
-        // API ANAHTARI DOĞRUDAN KODA GÖMÜLDÜ
         const API_KEY = "AIzaSyDZE1z25PE4IRY7r1dClYU_7BsgtAD14uo";
 
-        function openBrothersModal() { document.getElementById('brothersModal').style.display = 'flex'; }
-        function closeBrothersModal() { document.getElementById('brothersModal').style.display = 'none'; }
+        function logTerm(text) {
+            const log = document.getElementById('terminalLog');
+            log.innerHTML += `> ${text}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
 
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('tr-TR'); }, 1000);
+        function openModal() { document.getElementById('devModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('devModal').style.display = 'none'; }
 
-        // THREE.JS 3D DÜNYA KÜRESİ
+        setInterval(() => { 
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('tr-TR'); 
+            document.getElementById('cpuLoad').innerText = (Math.floor(Math.random() * 15) + 12) + '%';
+        }, 1000);
+
+        // 3D KÜRE (Three.js)
         const canvas = document.getElementById('globeCanvas');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        
+        function resizeGlobe() {
+            const width = canvas.parentElement.clientWidth;
+            const height = canvas.parentElement.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', resizeGlobe);
 
-        const geometry = new THREE.SphereGeometry(1.7, 24, 24);
-        const material = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true, transparent: true, opacity: 0.4 });
+        const geometry = new THREE.SphereGeometry(1.5, 20, 20);
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.35 });
         const globe = new THREE.Mesh(geometry, material);
         scene.add(globe);
+        camera.position.z = 3.8;
 
-        camera.position.z = 4.2;
-
-        function animateGlobe() {
-            requestAnimationFrame(animateGlobe);
-            globe.rotation.y += 0.004;
+        function animate() {
+            requestAnimationFrame(animate);
+            globe.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
-        animateGlobe();
+        animate();
+        setTimeout(resizeGlobe, 100);
 
-        // ERKEK VE TÜRKÇE SES SEÇİMİ
+        // SES MOTORU
         let voices = [];
-        function populateVoices() {
+        function loadVoices() {
             voices = window.speechSynthesis.getVoices();
-            const voiceSelect = document.getElementById('voiceSelect');
-            voiceSelect.innerHTML = '';
-
-            voices.forEach((voice, i) => {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                
-                if (voice.lang.includes('tr') || voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('david') || voice.name.toLowerCase().includes('tolga')) {
-                    option.selected = true;
-                }
-                voiceSelect.appendChild(option);
+            const select = document.getElementById('voiceSelect');
+            select.innerHTML = '';
+            voices.forEach((v, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${v.name} (${v.lang})`;
+                if(v.lang.includes('tr')) opt.selected = true;
+                select.appendChild(opt);
             });
         }
-        populateVoices();
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = populateVoices;
+        loadVoices();
+        if(window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
         }
 
-        function speakVoice(text, callback) {
-            const synth = window.speechSynthesis;
-            if (synth.speaking) synth.cancel();
-
+        function speak(text, cb) {
+            if(window.speechSynthesis.speaking) window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(text);
-            const voiceSelect = document.getElementById('voiceSelect');
-            if (voices[voiceSelect.value]) {
-                utter.voice = voices[voiceSelect.value];
-            }
+            const sel = document.getElementById('voiceSelect');
+            if(voices[sel.value]) utter.voice = voices[sel.value];
             utter.pitch = 0.85;
-            utter.rate = 1.0;
-            
-            utter.onend = () => {
-                if (callback) callback();
-            };
-
-            synth.speak(utter);
+            utter.onend = () => { if(cb) cb(); };
+            window.speechSynthesis.speak(utter);
         }
 
-        // CANLI PİL VE GPS
-        if ('getBattery' in navigator) {
-            navigator.getBattery().then(bat => {
-                function updateBat() {
-                    const lvl = Math.round(bat.level * 100);
-                    document.getElementById('liveBatLevel').innerText = `%${lvl}`;
-                    document.getElementById('liveBatState').innerText = bat.charging ? "Şarj Oluyor" : "Pilde";
-                    document.getElementById('dev1').style.width = lvl + "%";
-                    document.getElementById('dev1Text').innerText = `%${lvl}`;
-                }
+        // PİL VE GPS
+        if('getBattery' in navigator) {
+            navigator.getBattery().then(b => {
+                const updateBat = () => document.getElementById('batStatus').innerText = `%${Math.round(b.level*100)} (${b.charging?'Şarjda':'Pilde'})`;
                 updateBat();
-                bat.addEventListener('levelchange', updateBat);
-                bat.addEventListener('chargingchange', updateBat);
+                b.addEventListener('levelchange', updateBat);
             });
         }
 
         function getGPS() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude.toFixed(4);
-                    const lon = pos.coords.longitude.toFixed(4);
-                    document.getElementById('locCoords').innerText = `${lat} N, ${lon} E`;
-                    document.getElementById('locName').innerText = "Tespit Edildi";
-
+            logTerm("GPS koordinatları alınıyor...");
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(p => {
+                    const lat = p.coords.latitude.toFixed(2);
+                    const lon = p.coords.longitude.toFixed(2);
+                    document.getElementById('locName').innerText = `${lat}, ${lon}`;
+                    logTerm(`Konum çözüldü: ${lat}, ${lon}`);
                     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.current_weather) {
-                                document.getElementById('weatherTemp').innerText = `${data.current_weather.temperature} °C`;
-                                document.getElementById('weatherWind').innerText = `${data.current_weather.windspeed} km/h`;
+                        .then(r => r.json()).then(d => {
+                            if(d.current_weather) {
+                                document.getElementById('weatherTemp').innerText = `${d.current_weather.temperature} °C`;
+                                document.getElementById('weatherWind').innerText = `${d.current_weather.windspeed} km/h`;
                             }
                         });
                 });
             }
         }
 
-        // AI SORU CEVAPLAMA SİSTEMİ
-        async function askJarvis(customText = null) {
-            const input = document.getElementById('userInput');
-            const promptText = customText || input.value.trim();
-            if (!promptText) return;
+        function sendQuick(txt) {
+            document.getElementById('userInput').value = txt;
+            askJarvis();
+        }
 
-            addMsg(promptText, 'user');
+        // AI İLETİŞİM
+        async function askJarvis(custom = null) {
+            const input = document.getElementById('userInput');
+            const query = custom || input.value.trim();
+            if(!query) return;
+
+            addMsg(query, 'user');
             input.value = '';
             addMsg("İşleniyor...", 'jarvis');
+            logTerm(`Sorgu gönderildi: "${query}"`);
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText }] }],
-                        systemInstruction: {
-                            parts: [{ text: "Sen JARVIS V2 akıllı asistanısın. Soru ne olursa olsun net, zeki ve eksiksiz cevap ver. Hitabın karizmatik ve 'Efendim / Sir' tonunda olsun." }]
-                        }
+                        contents: [{ parts: [{ text: query }] }],
+                        systemInstruction: { parts: [{ text: "Sen JARVIS V3 akıllı yapay zeka asistanısın. Yanıtların son derece net, profesyonel, teknolojik ve 'Efendim / Sir' hitaplı olsun." }] }
                     })
                 });
 
                 const data = await res.json();
+                if(!res.ok) throw new Error(data.error?.message || "API Hatası");
 
-                if (!res.ok) {
-                    const errorMsg = data.error?.message || "Bilinmeyen API Hatası";
-                    throw new Error(`API Hatası (${res.status}): ${errorMsg}`);
-                }
-
-                const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Yanıt içeriği boş döndü.";
-                
+                const ans = data.candidates?.[0]?.content?.parts?.[0]?.text || "Boş yanıt alındı.";
                 const chat = document.getElementById('chatBox');
-                chat.lastChild.innerText = answer;
+                chat.lastChild.innerText = ans;
                 chat.scrollTop = chat.scrollHeight;
 
-                speakVoice(answer, () => {
-                    if (isListening) startListening();
-                });
+                logTerm("Yanıt başarıyla alındı.");
+                speak(ans, () => { if(isListening) startListening(); });
 
-            } catch (err) {
+            } catch(err) {
                 const chat = document.getElementById('chatBox');
-                chat.lastChild.innerText = "Sistem Hatası: " + err.message;
-                chat.scrollTop = chat.scrollHeight;
+                chat.lastChild.innerText = "Hata: " + err.message;
+                logTerm("HATA: " + err.message);
             }
         }
 
-        function addMsg(text, sender) {
+        function addMsg(txt, sender) {
             const chat = document.getElementById('chatBox');
             const div = document.createElement('div');
             div.className = `msg ${sender}`;
-            div.innerText = text;
+            div.innerText = txt;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // SÜREKLİ SESLİ DİNLENME SİSTEMİ
+        // SESLİ TANIMA
         let recognition;
         let isListening = false;
-
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
+        if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SR();
             recognition.lang = 'tr-TR';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
             recognition.onresult = (e) => {
                 const text = e.results[0][0].transcript;
                 document.getElementById('userInput').value = text;
                 askJarvis(text);
             };
-
-            recognition.onerror = () => {
-                if (isListening) setTimeout(startListening, 1000);
-            };
-
-            recognition.onend = () => {
-                if (isListening && !window.speechSynthesis.speaking) {
-                    startListening();
-                }
-            };
+            recognition.onend = () => { if(isListening && !window.speechSynthesis.speaking) startListening(); };
         }
 
-        function startListening() {
-            if (recognition) {
-                try {
-                    recognition.start();
-                } catch(e) {}
-            }
-        }
+        function startListening() { if(recognition) try { recognition.start(); } catch(e){} }
 
         function toggleSpeech() {
             const btn = document.getElementById('micBtn');
-            if (!isListening) {
+            if(!isListening) {
                 isListening = true;
-                btn.classList.add('mic-active');
-                btn.innerText = "🎙️ DİNLENİYOR...";
-                startListening();
-            } else {
-                isListening = false;
-                btn.classList.remove('mic-active');
-                btn.innerText = "🎙️ SESLİ KONTROL";
-                if (recognition) recognition.stop();
-            }
-        }
-    </script>
-</body>
-</html>
+                btn.classList.add('mi
